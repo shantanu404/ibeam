@@ -1,0 +1,30 @@
+GradientBoosting:
+  learning_rate: 0.0672688840876268
+  max_depth: 5
+  n_estimators: 1600
+  subsample: 0.5293213004366123
+MLP:
+  activation: logistic
+  alpha: 0.0023655927841421836
+  n_layers: 2
+  n_units_l1: 7
+  n_units_l2: 46
+  solver: lbfgs
+RandomForest:
+  criterion: squared_error
+  max_depth: 19
+  min_samples_leaf: 2
+  min_samples_split: 3
+  n_estimators: 3600
+SVR:
+  linear:
+    C: 0.2345828982926803
+    epsilon: 0.06467532868281467
+  poly:
+    C: 0.11182404270686742
+    degree: 3
+    epsilon: 0.001000357450946256
+  rbf:
+    C: 7.285533184620687
+    epsilon: 0.029836098522284676
+    gamma: 0.05702510078679353
