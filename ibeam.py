@@ -25,6 +25,9 @@ plt.rcParams["text.usetex"] = True
 
 # -------------------- Data loading and preprocessing (unchanged) --------------------
 df = pd.read_csv("Ratio2.csv")
+delta = abs(df['Mn/Mp (FEM)'] - df['Mn/Mp (Formula)'])
+threshold = 0.15
+df = df[delta <= threshold]
 df = df.drop(columns=["Mn/Mp (Formula)"])
 df = df.rename(columns={"Mn/Mp (FEM)": "Mn/Mp"})
 
@@ -61,7 +64,7 @@ X_full = df[["Lb/ry", "h/tw", "B/2t", "h/B", "tf/tw", "E/Fy", "Mp/Mcr"]]
 y_full = df["Mn/Mp"]
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X_full, y_full, test_size=0.3, random_state=136
+    X_full, y_full, test_size=0.2, random_state=42
 )
 
 # 5-fold CV
@@ -197,6 +200,10 @@ def run_study(
     study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
     print(f"[!] Best value ({direction}): {study.best_value}")
     print("[!] Best params:", study.best_params)
+    # Save study to runs folder
+    import joblib
+    os.makedirs("runs", exist_ok=True)
+    joblib.dump(study, f"runs/{study_name}.pkl")
     return study
 
 
@@ -218,7 +225,7 @@ def rf_objective(trial):
     criterion = trial.suggest_categorical(
         "criterion", ["squared_error", "friedman_mse", "poisson"]
     )
-    max_depth = trial.suggest_int("max_depth", 2, 20)
+    max_depth = trial.suggest_int("max_depth", 2, 8)
     min_samples_split = trial.suggest_int("min_samples_split", 2, 10)
     min_samples_leaf = trial.suggest_int("min_samples_leaf", 1, 10)
     model = RandomForestRegressor(
@@ -236,7 +243,7 @@ def rf_objective(trial):
 # --- Save best params to YAML ---
 besthyp = {}
 
-rf_study = run_study(rf_objective, n_trials=100, study_name="rf_opt")
+rf_study = run_study(rf_objective, study_name="rf_opt")
 besthyp["RandomForest"] = rf_study.best_params
 rf_best = RandomForestRegressor(random_state=42, **rf_study.best_params, n_jobs=-1)
 rf_best.fit(X_train, y_train)
@@ -249,10 +256,11 @@ os.makedirs("gradient-boosting", exist_ok=True)
 
 def gb_objective(trial):
     n_estimators = trial.suggest_int("n_estimators", 1000, 12000, step=1000)
-    learning_rate = trial.suggest_float("learning_rate", 0.01, 0.2, log=True)
+    learning_rate = trial.suggest_float("learning_rate", 0.01, 0.1, step=0.01)
     max_depth = trial.suggest_int("max_depth", 2, 8)
     model = GradientBoostingRegressor(
         random_state=42,
+        subsample=0.7,
         n_estimators=n_estimators,
         learning_rate=learning_rate,
         max_depth=max_depth,
@@ -260,10 +268,12 @@ def gb_objective(trial):
     return neg_mse_cv(model)
 
 
-gb_study = run_study(gb_objective, n_trials=100, study_name="gb_opt")
+gb_study = run_study(gb_objective, study_name="gb_opt")
 besthyp["GradientBoosting"] = gb_study.best_params
 gb_best = GradientBoostingRegressor(
-    random_state=42, **gb_study.best_params
+    random_state=42,
+    subsample=0.7,
+    **gb_study.best_params
 )
 gb_best.fit(X_train, y_train)
 gb_metrics = evaluate_pipeline(gb_best, threshold=1e9)  # keep original threshold choice
@@ -305,7 +315,7 @@ for kernel in ["linear", "rbf", "poly"]:
         model = make_svr_pipeline(k, trial)
         return neg_mse_cv(model)
 
-    svr_study = run_study(svr_objective, n_trials=100, study_name=f"svr_{kernel}_opt")
+    svr_study = run_study(svr_objective, study_name=f"svr_{kernel}_opt")
     if "SVR" not in besthyp:
         besthyp["SVR"] = {}
     besthyp["SVR"][kernel] = svr_study.best_params
@@ -315,6 +325,9 @@ for kernel in ["linear", "rbf", "poly"]:
     best_pipe.fit(X_train, y_train)
     svr_metrics[kernel] = evaluate_pipeline(best_pipe, threshold=1e9)
     plot_accuracy(svr_metrics[kernel], f"SVR-{kernel}")
+
+pd.DataFrame(svr_metrics).filter(regex='_mse', axis=0).transpose().plot.bar()
+plt.savefig('svr/svr-kernel-mse.png', dpi=640, bbox_inches='tight')
 
 # -------------------- MLP Regressor (Optuna + 5-fold CV) --------------------
 os.makedirs("MLP", exist_ok=True)
@@ -342,7 +355,7 @@ def mlp_objective(trial):
     return neg_mse_cv(pipe)
 
 
-mlp_study = run_study(mlp_objective, n_trials=100, study_name="mlp_opt")
+mlp_study = run_study(mlp_objective, study_name="mlp_opt")
 besthyp["MLP"] = mlp_study.best_params
 # Rebuild the best pipeline from best_params
 best_hidden = tuple(
