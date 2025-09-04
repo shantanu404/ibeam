@@ -25,8 +25,6 @@ plt.rcParams["text.usetex"] = True
 
 # -------------------- Data loading and preprocessing (unchanged) --------------------
 df = pd.read_csv("Ratio2.csv")
-delta = abs(df["Mn/Mp (FEM)"] - df["Mn/Mp (Formula)"]) < 0.2
-df = df[delta]
 df = df.drop(columns=["Mn/Mp (Formula)"])
 df = df.rename(columns={"Mn/Mp (FEM)": "Mn/Mp"})
 
@@ -63,7 +61,7 @@ X_full = df[["Lb/ry", "h/tw", "B/2t", "h/B", "tf/tw", "E/Fy", "Mp/Mcr"]]
 y_full = df["Mn/Mp"]
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X_full, y_full, test_size=0.2, random_state=123
+    X_full, y_full, test_size=0.3, random_state=136
 )
 
 # 5-fold CV
@@ -205,7 +203,7 @@ def run_study(
 def neg_mse_cv(model):
     """Returns mean CV negative MSE (to MINIMIZE MSE we will return positive MSE)."""
     scores = cross_val_score(
-        model, X_full, y_full, cv=cv5, scoring="neg_mean_squared_error", n_jobs=-1
+        model, X_train, y_train, cv=cv5, scoring="neg_mean_squared_error", n_jobs=-1
     )
     # cross_val_score yields NEG-MSE; we want to minimize MSE -> return positive MSE
     return -np.mean(scores)
@@ -216,7 +214,7 @@ os.makedirs("random-forest", exist_ok=True)
 
 
 def rf_objective(trial):
-    n_estimators = trial.suggest_int("n_estimators", 50, 5000, step=50)
+    n_estimators = trial.suggest_int("n_estimators", 1000, 5000, step=500)
     criterion = trial.suggest_categorical(
         "criterion", ["squared_error", "friedman_mse", "poisson"]
     )
@@ -242,7 +240,7 @@ rf_study = run_study(rf_objective, n_trials=100, study_name="rf_opt")
 besthyp["RandomForest"] = rf_study.best_params
 rf_best = RandomForestRegressor(random_state=42, **rf_study.best_params, n_jobs=-1)
 rf_best.fit(X_train, y_train)
-rf_metrics = evaluate_pipeline(rf_best)
+rf_metrics = evaluate_pipeline(rf_best, threshold=1e9)
 plot_accuracy(rf_metrics, "random-forest")
 
 # -------------------- Gradient Boosting (Optuna + 5-fold CV) --------------------
@@ -250,23 +248,23 @@ os.makedirs("gradient-boosting", exist_ok=True)
 
 
 def gb_objective(trial):
-    n_estimators = trial.suggest_int("n_estimators", 100, 5000, 100)
+    n_estimators = trial.suggest_int("n_estimators", 1000, 12000, step=1000)
     learning_rate = trial.suggest_float("learning_rate", 0.01, 0.2, log=True)
-    max_depth = trial.suggest_int("max_depth", 2, 6)
-    subsample = trial.suggest_float("subsample", 0.5, 1.0)
+    max_depth = trial.suggest_int("max_depth", 2, 8)
     model = GradientBoostingRegressor(
         random_state=42,
         n_estimators=n_estimators,
         learning_rate=learning_rate,
         max_depth=max_depth,
-        subsample=subsample,
     )
     return neg_mse_cv(model)
 
 
 gb_study = run_study(gb_objective, n_trials=100, study_name="gb_opt")
 besthyp["GradientBoosting"] = gb_study.best_params
-gb_best = GradientBoostingRegressor(random_state=42, **gb_study.best_params)
+gb_best = GradientBoostingRegressor(
+    random_state=42, **gb_study.best_params
+)
 gb_best.fit(X_train, y_train)
 gb_metrics = evaluate_pipeline(gb_best, threshold=1e9)  # keep original threshold choice
 plot_accuracy(gb_metrics, "gradient-boosting")
@@ -307,7 +305,7 @@ for kernel in ["linear", "rbf", "poly"]:
         model = make_svr_pipeline(k, trial)
         return neg_mse_cv(model)
 
-    svr_study = run_study(svr_objective, n_trials=1000, study_name=f"svr_{kernel}_opt")
+    svr_study = run_study(svr_objective, n_trials=100, study_name=f"svr_{kernel}_opt")
     if "SVR" not in besthyp:
         besthyp["SVR"] = {}
     besthyp["SVR"][kernel] = svr_study.best_params
@@ -315,7 +313,7 @@ for kernel in ["linear", "rbf", "poly"]:
         kernel, optuna.trial.FixedTrial(svr_study.best_params)
     )
     best_pipe.fit(X_train, y_train)
-    svr_metrics[kernel] = evaluate_pipeline(best_pipe)
+    svr_metrics[kernel] = evaluate_pipeline(best_pipe, threshold=1e9)
     plot_accuracy(svr_metrics[kernel], f"SVR-{kernel}")
 
 # -------------------- MLP Regressor (Optuna + 5-fold CV) --------------------
@@ -344,7 +342,7 @@ def mlp_objective(trial):
     return neg_mse_cv(pipe)
 
 
-mlp_study = run_study(mlp_objective, n_trials=1000, study_name="mlp_opt")
+mlp_study = run_study(mlp_objective, n_trials=100, study_name="mlp_opt")
 besthyp["MLP"] = mlp_study.best_params
 # Rebuild the best pipeline from best_params
 best_hidden = tuple(
@@ -362,7 +360,7 @@ best_mlp = MLPRegressor(
 )
 nn_pipeline = Pipeline([("scaler", StandardScaler()), ("mlp", best_mlp)])
 nn_pipeline.fit(X_train, y_train)
-nn_metrics = evaluate_pipeline(nn_pipeline, 0.3)
+nn_metrics = evaluate_pipeline(nn_pipeline, threshold=1e9)
 plot_accuracy(nn_metrics, "MLP")
 
 # --- Write all best params to YAML file ---
