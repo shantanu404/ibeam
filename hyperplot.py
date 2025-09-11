@@ -38,6 +38,14 @@ def plot_best_performance_across_hyperparams(cv_result, titlename):
         ax.set_xticklabels(metrics)
         plt.title(f"Best performance across {col}")
         plt.savefig(f"{titlename}/{titlename}-hyperparam-{col}.png", dpi=640, bbox_inches="tight")
+        # Save axes data to CSV
+        xdata = []
+        ydata = []
+        for line in ax.get_lines():
+            xdata.extend(line.get_xdata())
+            ydata.extend(line.get_ydata())
+        if xdata and ydata:
+            pd.DataFrame({'x': xdata, 'y': ydata}).to_csv(f"{titlename}/{titlename}-hyperparam-{col}.csv", index=False)
         plt.close(fig)
 
 # Example usage:

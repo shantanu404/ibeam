@@ -47,6 +47,14 @@ tempdf = df.rename(
 sns.heatmap(tempdf.corr(numeric_only=True), cmap="YlGnBu", annot=True)
 os.makedirs("figs", exist_ok=True)
 plt.savefig("figs/crosscorrelation.png", dpi=640, bbox_inches="tight")
+ax = plt.gca()
+xdata = []
+ydata = []
+for line in ax.get_lines():
+    xdata.extend(line.get_xdata())
+    ydata.extend(line.get_ydata())
+if xdata and ydata:
+    pd.DataFrame({'x': xdata, 'y': ydata}).to_csv("figs/crosscorrelation.csv", index=False)
 plt.close()
 
 df_stats = df.describe().transpose()
@@ -58,6 +66,14 @@ C = tempdf.corr(numeric_only=True)[r"M\textsubscript{n}/M\textsubscript{p}"][:-1
 plt.bar(C.index, np.abs(C.values))
 plt.ylim([0, 1])
 plt.savefig("figs/correlation-with-Mn-Mp.png", dpi=640, bbox_inches="tight")
+ax = plt.gca()
+xdata = []
+ydata = []
+for bar in ax.patches:
+    xdata.append(bar.get_x())
+    ydata.append(bar.get_height())
+if xdata and ydata:
+    pd.DataFrame({'x': xdata, 'y': ydata}).to_csv("figs/correlation-with-Mn-Mp.csv", index=False)
 plt.close()
 
 X_full = df[["Lb/ry", "h/tw", "B/2t", "h/B", "tf/tw", "E/Fy", "Mp/Mcr"]]
@@ -144,6 +160,16 @@ def plot_accuracy(pipeline_metrics, title):
     axes.set_ylabel("Predicted Value")
     axes.legend()
     fig_train.savefig(f"{title}/{title}-train.png", dpi=640, bbox_inches="tight")
+
+    # Save axes data to CSV
+    xdata = []
+    ydata = []
+    for line in axes.get_lines():
+        xdata.extend(line.get_xdata())
+        ydata.extend(line.get_ydata())
+    if xdata and ydata:
+        pd.DataFrame({'x': xdata, 'y': ydata}).to_csv(f"{title}/{title}-train.csv", index=False)
+
     plt.close(fig_train)
 
     fig_test, axes = plt.subplots(figsize=(4, 4))
@@ -161,6 +187,14 @@ def plot_accuracy(pipeline_metrics, title):
     axes.set_ylabel("Predicted Value")
     axes.legend()
     fig_test.savefig(f"{title}/{title}-test.png", dpi=640, bbox_inches="tight")
+    # Save axes data to CSV
+    xdata = []
+    ydata = []
+    for line in axes.get_lines():
+        xdata.extend(line.get_xdata())
+        ydata.extend(line.get_ydata())
+    if xdata and ydata:
+        pd.DataFrame({'x': xdata, 'y': ydata}).to_csv(f"{title}/{title}-test.csv", index=False)
     plt.close(fig_test)
 
     fig_full, axes = plt.subplots(figsize=(4, 4))
@@ -186,6 +220,14 @@ def plot_accuracy(pipeline_metrics, title):
     axes.set_ylabel("Predicted Value")
     axes.legend()
     fig_full.savefig(f"{title}/{title}-full.png", dpi=640, bbox_inches="tight")
+    # Save axes data to CSV
+    xdata = []
+    ydata = []
+    for line in axes.get_lines():
+        xdata.extend(line.get_xdata())
+        ydata.extend(line.get_ydata())
+    if xdata and ydata:
+        pd.DataFrame({'x': xdata, 'y': ydata}).to_csv(f"{title}/{title}-full.csv", index=False)
     plt.close(fig_full)
 
 

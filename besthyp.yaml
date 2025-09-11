@@ -9,7 +9,7 @@ MLP:
   n_units_l1: 7
   solver: lbfgs
 RandomForest:
-  criterion: squared_error
+  criterion: friedman_mse
   max_depth: 8
   min_samples_leaf: 1
   min_samples_split: 2
