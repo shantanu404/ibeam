@@ -29,14 +29,23 @@ def plot_best_performance_across_hyperparams(cv_result, titlename):
         angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
         values = np.concatenate((values, [values[0]]))  # Close the loop
         angles += angles[:1]
-        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+        fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
         ax.margins(0.1)
         ax.scatter(angles, values)
         ax.plot(angles, values, '--')
         ax.fill(angles, values, alpha=0.25)
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(metrics)
-        plt.title(f"Best performance across {col}")
+        ax.yaxis.set_major_locator(plt.MaxNLocator(4))
+
+        # Check if labels are floats and format them
+        try:
+            float_labels = [float(label) for label in metrics]
+            ax.set_xticklabels([f"{label:.2f}" for label in float_labels])
+        except ValueError:
+            pass  # Labels are not all floats, keep original
+
+        plt.title(f"Best performance across $\\texttt{{{col}}}$")
         plt.savefig(f"{titlename}/{titlename}-hyperparam-{col}.png", dpi=640, bbox_inches="tight")
         plt.close(fig)
 
