@@ -137,12 +137,14 @@ def plot_accuracy(pipeline_metrics, title):
     fig_train, axes = plt.subplots(figsize=(2.5, 2.5))
     axes.plot([0, 1], [0, 1])
     axes.text(0.1, 0.7, f"$R^2={pipeline_train_r2_score:.5f}$")
-    axes.plot(
+    axes.scatter(
         y_train_mod,
         pipeline_train_prd,
-        "bo",
+        s=6,
+        color="blue",
         alpha=0.5,
-        markeredgewidth=0.1,
+        marker='o',
+        edgecolors='none',
         label="Train data",
     )
     axes.set_xlabel("Actual Value")
@@ -154,12 +156,14 @@ def plot_accuracy(pipeline_metrics, title):
     fig_test, axes = plt.subplots(figsize=(2.5, 2.5))
     axes.plot([0, 1], [0, 1])
     axes.text(0.1, 0.7, f"$R^2={pipeline_test_r2_score:.5f}$")
-    axes.plot(
+    axes.scatter(
         y_test_mod,
         pipeline_test_prd,
-        "ro",
+        s=6,
+        color="red",
         alpha=0.5,
-        markeredgewidth=0.1,
+        marker='o',
+        edgecolors='none',
         label="Test data",
     )
     axes.set_xlabel("Actual Value")
@@ -171,20 +175,23 @@ def plot_accuracy(pipeline_metrics, title):
     fig_full, axes = plt.subplots(figsize=(2.5, 2.5))
     axes.plot([0, 1], [0, 1])
     axes.text(0.1, 0.7, f"$R^2={pipeline_full_r2_score:.5f}$")
-    axes.plot(
+    axes.scatter(
         y_train_mod,
         pipeline_train_prd,
-        "bo",
+        s=6,
+        color="blue",
         alpha=0.5,
-        markeredgewidth=0.1,
+        marker='o',
+        edgecolors='none',
         label="Train data",
     )
-    axes.plot(
+    axes.scatter(
         y_test_mod,
         pipeline_test_prd,
-        "ro",
+        s=6,
+        color="red",
         alpha=0.5,
-        markeredgewidth=0.1,
+        edgecolors='none',
         label="Test data",
     )
     axes.set_xlabel("Actual Value")

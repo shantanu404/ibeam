@@ -9,11 +9,11 @@ MLP:
   n_units_l1: 48
   solver: lbfgs
 RandomForest:
-  criterion: friedman_mse
+  criterion: squared_error
   max_depth: 8
   min_samples_leaf: 1
-  min_samples_split: 2
-  n_estimators: 2500
+  min_samples_split: 3
+  n_estimators: 1500
 SVR:
   linear:
     C: 3.7392562916288035
