@@ -44,7 +44,10 @@ tempdf = df.rename(
 )
 
 # Optional: correlation figures (kept from original script)
-sns.heatmap(tempdf.corr(numeric_only=True), cmap="YlGnBu", annot=True)
+plt.figure(figsize=(5, 4))
+sns.heatmap(tempdf.corr(numeric_only=True), cmap="YlGnBu", annot=True, fmt='.2f', annot_kws={"fontsize": 8})
+plt.xticks(rotation=45)
+plt.yticks(rotation=45)
 os.makedirs("figs", exist_ok=True)
 plt.savefig("figs/crosscorrelation.png", dpi=640, bbox_inches="tight")
 plt.close()
@@ -55,8 +58,10 @@ df_stats["variance"] = df_stats["std"] ** 2
 print(df_stats)
 
 C = tempdf.corr(numeric_only=True)[r"M\textsubscript{n}/M\textsubscript{p}"][:-1]
+plt.figure(figsize=(4, 3))
 plt.bar(C.index, np.abs(C.values))
 plt.ylim([0, 1])
+plt.ylabel(r"$|$Correlation with $M\textsubscript{n}/M\textsubscript{p}|$")
 plt.savefig("figs/correlation-with-Mn-Mp.png", dpi=640, bbox_inches="tight")
 plt.close()
 
@@ -129,7 +134,7 @@ def plot_accuracy(pipeline_metrics, title):
     pipeline_test_r2_score = pipeline_metrics["test_r2"]
     pipeline_full_r2_score = pipeline_metrics["full_r2"]
 
-    fig_train, axes = plt.subplots(figsize=(4, 4))
+    fig_train, axes = plt.subplots(figsize=(2.5, 2.5))
     axes.plot([0, 1], [0, 1])
     axes.text(0.1, 0.7, f"$R^2={pipeline_train_r2_score:.5f}$")
     axes.plot(
@@ -142,11 +147,11 @@ def plot_accuracy(pipeline_metrics, title):
     )
     axes.set_xlabel("Actual Value")
     axes.set_ylabel("Predicted Value")
-    axes.legend()
+    axes.legend(loc='lower right')
     fig_train.savefig(f"{title}/{title}-train.png", dpi=640, bbox_inches="tight")
     plt.close(fig_train)
 
-    fig_test, axes = plt.subplots(figsize=(4, 4))
+    fig_test, axes = plt.subplots(figsize=(2.5, 2.5))
     axes.plot([0, 1], [0, 1])
     axes.text(0.1, 0.7, f"$R^2={pipeline_test_r2_score:.5f}$")
     axes.plot(
@@ -159,11 +164,11 @@ def plot_accuracy(pipeline_metrics, title):
     )
     axes.set_xlabel("Actual Value")
     axes.set_ylabel("Predicted Value")
-    axes.legend()
+    axes.legend(loc='lower right')
     fig_test.savefig(f"{title}/{title}-test.png", dpi=640, bbox_inches="tight")
     plt.close(fig_test)
 
-    fig_full, axes = plt.subplots(figsize=(4, 4))
+    fig_full, axes = plt.subplots(figsize=(2.5, 2.5))
     axes.plot([0, 1], [0, 1])
     axes.text(0.1, 0.7, f"$R^2={pipeline_full_r2_score:.5f}$")
     axes.plot(
@@ -184,7 +189,7 @@ def plot_accuracy(pipeline_metrics, title):
     )
     axes.set_xlabel("Actual Value")
     axes.set_ylabel("Predicted Value")
-    axes.legend()
+    axes.legend(loc='lower right')
     fig_full.savefig(f"{title}/{title}-full.png", dpi=640, bbox_inches="tight")
     plt.close(fig_full)
 

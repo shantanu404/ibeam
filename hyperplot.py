@@ -29,23 +29,27 @@ def plot_best_performance_across_hyperparams(cv_result, titlename):
         angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
         values = np.concatenate((values, [values[0]]))  # Close the loop
         angles += angles[:1]
-        fig, ax = plt.subplots(figsize=(4, 4), subplot_kw=dict(polar=True))
+        fig, ax = plt.subplots(figsize=(2, 2), subplot_kw=dict(polar=True))
         ax.margins(0.1)
-        ax.scatter(angles, values)
-        ax.plot(angles, values, '--')
+        ax.scatter(angles, values, s=5)
+        ax.plot(angles, values, '--', linewidth=0.5)
         ax.fill(angles, values, alpha=0.25)
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(metrics)
         ax.yaxis.set_major_locator(plt.MaxNLocator(4))
+        ax.tick_params(axis='y', labelrotation=-45)
+        ax.set_rlabel_position(45)
 
-        # Check if labels are floats and format them
+        # Check if labels are floats (and NOT ints) and format them
         try:
             float_labels = [float(label) for label in metrics]
-            ax.set_xticklabels([f"{label:.2f}" for label in float_labels])
+            # Only format if at least one label is not an integer
+            if any(not float(label).is_integer() for label in float_labels):
+                ax.set_xticklabels([f"{label:.2f}" for label in float_labels])
         except ValueError:
             pass  # Labels are not all floats, keep original
 
-        plt.title(f"Best performance across $\\texttt{{{col}}}$")
+        # plt.title(f"Best performance across $\\texttt{{{col}}}$")
         plt.savefig(f"{titlename}/{titlename}-hyperparam-{col}.png", dpi=640, bbox_inches="tight")
         plt.close(fig)
 
