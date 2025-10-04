@@ -9,7 +9,7 @@ import optuna
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["text.usetex"] = True
 
-def plot_best_performance_across_hyperparams(cv_result, titlename):
+def plot_best_performance_across_hyperparams(cv_result, titlename, logscale=False):
     """
     Plots the best (minimum) test score for each value of every hyperparameter in cv_result['params'].
     Saves a polar plot for each hyperparameter in the titlename folder.
@@ -26,26 +26,39 @@ def plot_best_performance_across_hyperparams(cv_result, titlename):
         df = heatmap_data.groupby(col)['mean_r2'].min()
         metrics = df.index.tolist()
         values = df.values.tolist()
+
+        if logscale:
+            values = np.log10(values)
+
         angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
         values = np.concatenate((values, [values[0]]))  # Close the loop
         angles += angles[:1]
         fig, ax = plt.subplots(figsize=(2, 2), subplot_kw=dict(polar=True))
+
         ax.margins(0.1)
         ax.scatter(angles, values, s=5)
         ax.plot(angles, values, '--', linewidth=0.5)
         ax.fill(angles, values, alpha=0.25)
+
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(metrics)
+        ax.grid(True)
+
         ax.yaxis.set_major_locator(plt.MaxNLocator(4))
-        ax.tick_params(axis='y', labelrotation=-45)
-        ax.set_rlabel_position(45)
+
+        if logscale:
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"$10^{{{y:.2f}}}$"))
+
+        angle = 45
+        ax.tick_params(axis='y', rotation=-angle)
+        ax.set_rlabel_position(angle)
 
         # Check if labels are floats (and NOT ints) and format them
         try:
             float_labels = [float(label) for label in metrics]
             # Only format if at least one label is not an integer
             if any(not float(label).is_integer() for label in float_labels):
-                ax.set_xticklabels([f"{label:.2f}" for label in float_labels])
+                ax.set_xticklabels([f"{label:.3f}" for label in float_labels])
         except ValueError:
             pass  # Labels are not all floats, keep original
 

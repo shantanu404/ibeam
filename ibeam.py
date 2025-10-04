@@ -31,10 +31,13 @@ df = df[delta <= threshold]
 df = df.drop(columns=["Mn/Mp (Formula)"])
 df = df.rename(columns={"Mn/Mp (FEM)": "Mn/Mp"})
 
+# df = df[["Lb/ry", "h/tw", "B/2t", "h/B", "tf/tw", "E/Fy", "Mp/Mcr", "Mn/Mp"]]
+df = df[["Lb/ry", "B/2t", "h/B", "tf/tw", "E/Fy", "Mp/Mcr", "Mn/Mp"]]
+
 tempdf = df.rename(
     columns={
         "Lb/ry": r"L\textsubscript{b}/r\textsubscript{y}",
-        "h/tw": r"h\textsubscript{w}",
+#        "h/tw": r"h/t\textsubscript{w}",
         "tf/tw": r"t\textsubscript{f}/t\textsubscript{w}",
         "E/Fy": r"E/F\textsubscript{y}",
         "Mp/Mcr": r"M\textsubscript{p}/M\textsubscript{cr}",
@@ -65,7 +68,8 @@ plt.ylabel(r"$|$Correlation with $M\textsubscript{n}/M\textsubscript{p}|$")
 plt.savefig("figs/correlation-with-Mn-Mp.png", dpi=640, bbox_inches="tight")
 plt.close()
 
-X_full = df[["Lb/ry", "h/tw", "B/2t", "h/B", "tf/tw", "E/Fy", "Mp/Mcr"]]
+# X_full = df[["Lb/ry", "h/tw", "B/2t", "h/B", "tf/tw", "E/Fy", "Mp/Mcr"]]
+X_full = df[["Lb/ry", "B/2t", "h/B", "tf/tw", "E/Fy", "Mp/Mcr"]]
 y_full = df["Mn/Mp"]
 
 X_train, X_test, y_train, y_test = train_test_split(
@@ -267,8 +271,8 @@ os.makedirs("gradient-boosting", exist_ok=True)
 
 
 def gb_objective(trial):
-    n_estimators = trial.suggest_int("n_estimators", 1000, 12000, step=1000)
-    learning_rate = trial.suggest_float("learning_rate", 0.01, 0.1, step=0.01)
+    n_estimators = trial.suggest_int("n_estimators", 500, 5000, step=500)
+    learning_rate = trial.suggest_float("learning_rate", 0.005, 0.015, step=0.001)
     max_depth = trial.suggest_int("max_depth", 2, 8)
     model = GradientBoostingRegressor(
         random_state=42,
@@ -293,7 +297,7 @@ plot_accuracy(gb_metrics, "gradient-boosting")
 
 # feature importance plot
 feature_importance = gb_best.feature_importances_
-plt.bar(tempdf.columns[:7], feature_importance)
+plt.bar(tempdf.columns[:-1], feature_importance)
 plt.savefig("gradient-boosting/feature-imp.png", dpi=640, bbox_inches="tight")
 plt.close()
 
